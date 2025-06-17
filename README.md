@@ -38,7 +38,9 @@
 #### 软件如何使用
 
 1.  不同的账号进去所使用的功能不同，对于管理员账号，可以看到下载导入模版进行查看导入模版规整自己要导入的数据，可以新建预测任务进行对订单任务排序，可以配置工厂的各项产能，其订单的各个部分的处理时间就是依据产能和数量得出的。普通账号就只能查看预测好的任务。
+![Image text](https://gitee.com/zxyldl888888/approximation-algorithm/raw/master/login-admin.jpg）
 ![Image text](https://gitee.com/zxyldl888888/approximation-algorithm/raw/master/%E6%9F%A5%E7%9C%8B%E6%9C%BA%E5%99%A8%E4%BA%A7%E8%83%BD.jpg)
+![Image text](https://gitee.com/zxyldl888888/approximation-algorithm/raw/master/loginuser.jpg）
 2.  新建预测任务，第一步输入描述便于查找和看任务对应的日期和内容
 ![Image text](https://gitee.com/zxyldl888888/approximation-algorithm/raw/master/%E6%96%B0%E5%BB%BA%E9%A2%84%E6%B5%8B.jpg)
 3.  新建完后，将订单输入按照导入模版整理后导入，预览看是否正确，正确则导入，错误则取消，整理excel表格后在进行导入
