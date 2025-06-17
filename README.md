@@ -32,7 +32,7 @@
 4. 论证得到的解不超过最优解的1.58倍
 
    主要流程如下：
-![Image text](https://gitee.com/zxyldl888888/approximation-algorithm/blob/master/Snipaste_2025-06-17_14-12-36.jpg）
+![Image text](https://gitee.com/zxyldl888888/approximation-algorithm/raw/master/Snipaste_2025-06-17_14-12-36.jpg)
 
 
 #### 软件如何使用
