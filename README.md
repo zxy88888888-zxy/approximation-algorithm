@@ -38,11 +38,15 @@
 #### 软件如何使用
 
 1.  不同的账号进去所使用的功能不同，对于管理员账号，可以看到下载导入模版进行查看导入模版规整自己要导入的数据，可以新建预测任务进行对订单任务排序，可以配置工厂的各项产能，其订单的各个部分的处理时间就是依据产能和数量得出的。普通账号就只能查看预测好的任务。
+![Image text](https://gitee.com/zxyldl888888/approximation-algorithm/raw/master/%E6%9F%A5%E7%9C%8B%E6%9C%BA%E5%99%A8%E4%BA%A7%E8%83%BD.jpg)
 2.  新建预测任务，第一步输入描述便于查找和看任务对应的日期和内容
 ![Image text](https://gitee.com/zxyldl888888/approximation-algorithm/raw/master/%E6%96%B0%E5%BB%BA%E9%A2%84%E6%B5%8B.jpg)
-3.  你可以 [https://gitee.com/explore](https://gitee.com/explore) 这个地址来了解 Gitee 上的优秀开源项目
-4.  新建完后，将订单输入按照导入模版整理后导入，预览看是否正确，正确则导入，错误则取消，整理excel表格后在进行导入
-5.  导入成功后，点击开始预测，就是使用本项目设计的1.58近似算法开始对订单进行预测排序。
-6.  预测成功后，接受订单排序那可以滑动查看订单Id
-7.  在操作那，可以点击详情，查看导入订单的详细记录。
+3.  新建完后，将订单输入按照导入模版整理后导入，预览看是否正确，正确则导入，错误则取消，整理excel表格后在进行导入
+![Image text](https://gitee.com/zxyldl888888/approximation-algorithm/raw/master/%E5%AF%BC%E5%85%A5%E5%89%8D%E9%A2%84%E8%A7%88.jpg)
+4.  导入成功后，点击开始预测，就是使用本项目设计的1.58近似算法开始对订单进行预测排序。
+![Image text](https://gitee.com/zxyldl888888/approximation-algorithm/raw/master/%E7%82%B9%E5%87%BB%E5%BC%80%E5%A7%8B%E9%A2%84%E6%B5%8B.jpg)
+5.  预测成功后，接受订单排序那可以滑动查看订单Id
+![Image text](https://gitee.com/zxyldl888888/approximation-algorithm/raw/master/%E6%BB%91%E5%8A%A8%E5%B1%95%E7%A4%BA%E6%8E%A5%E8%AE%A2%E5%8D%95id.jpg)
+6.  在操作那，可以点击详情，查看导入订单的详细记录。
+![Image text](https://gitee.com/zxyldl888888/approximation-algorithm/raw/master/%E5%AF%BC%E5%85%A5%E8%AE%A2%E5%8D%95%E8%AF%A6%E6%83%85.jpg)
 
