@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>预测任务管理</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/antd@4.24.15/dist/antd.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        body {
+            background: #f0f2f5;
+            font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+         .operation-buttons {
+             display: flex;
+             gap: 6px;
+             flex-wrap: nowrap;
+             overflow-x: auto;
+         }
+        .operation-buttons .ant-btn,
+        .operation-buttons input[type="file"] {
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+          .sequence-cell {
+             max-height: 80px;         /* 固定最大高度 */
+             overflow-y: auto;         /* 超出竖向滚动 */
+             white-space: normal;      /* 允许换行 */
+             word-break: break-word;   /* 单词或数字也能断行 */
+         }
+          .container {
+            max-width: 1100px;
+            margin: 40px auto;
+            background: #fff;
+            padding: 32px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        .actions {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+        .left-actions {
+            display: flex;
+            gap: 12px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+        }
+        th, td {
+            border: 1px solid #f0f0f0;
+            padding: 10px;
+            text-align: center;
+        }
+        th {
+            background-color: #fafafa;
+        }
+        .modal {
+            position: fixed;
+            top: 20%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 400px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.2);
+            padding: 24px;
+            display: none;
+            z-index: 999;
+        }
+        .modal.show {
+            display: block;
+        }
+        .modal-header {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 16px;
+        }
+        .form-item {
+            margin-bottom: 16px;
+        }
+        .form-item label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: 500;
+        }
+        .form-item input, .form-item select, .form-item textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #d9d9d9;
+            border-radius: 4px;
+        }
+        .modal-footer {
+            text-align: right;
+            margin-top: 12px;
+        }
+        .ant-btn {
+            margin-left: 8px;
+        }
+        .modal {
+            position: fixed;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80vw;
+            max-height: 80vh;
+            overflow-y: auto;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+            padding: 24px;
+            display: none;
+            z-index: 999;
+        }
+
+        #excelPreviewContent table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        #excelPreviewContent th, #excelPreviewContent td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+
+        #excelPreviewContent th {
+            background-color: #f5f5f5;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="actions">
+        <div class="left-actions">
+            <input id="searchInput" placeholder="请输入预测描述或预测版本" style="width: 240px; padding: 6px; border: 1px solid #d9d9d9; border-radius: 4px;" />
+            <button class="ant-btn ant-btn-primary" onclick="searchTasks()">搜索</button>
+            <a id="downloadTemplate" href="/template.xlsx" class="ant-btn ant-btn-link" download>下载预测数据导入模板</a>
+        </div>
+        <button class="ant-btn ant-btn-primary" onclick="openModal()">+ 新建预测任务</button>
+        <button class="ant-btn ant-btn-primary" onclick="openCapacityModal()">查看机器产能配置</button>
+
+
+    </div>
+
+    <div id="capacityModal" style="display:none; position:fixed; top:10%; left:50%; transform: translateX(-50%);
+  background:#fff; border-radius: 4px; box-shadow: 0 3px 6px rgba(0,0,0,0.16); padding: 24px; width: 700px; max-height: 70vh; overflow-y: auto; z-index: 1000;">
+        <h3 style="margin-bottom: 16px;">机器产能配置</h3>
+        <table class="ant-table" style="width:100%; border-collapse: collapse;">
+            <thead class="ant-table-thead" style="background:#fafafa;">
+            <tr>
+                <th style="padding:8px; border:1px solid #f0f0f0;">产品名称</th>
+                <th style="padding:8px; border:1px solid #f0f0f0;">产品代码</th>
+                <th style="padding:8px; border:1px solid #f0f0f0;">每小时产量</th>
+                <th style="padding:8px; border:1px solid #f0f0f0;">单位</th>
+                <th style="padding:8px; border:1px solid #f0f0f0;">操作</th>
+            </tr>
+            </thead>
+            <tbody class="ant-table-tbody" id="capacityTbody">
+            <!-- JS填充 -->
+            </tbody>
+        </table>
+        <div style="margin-top: 16px; text-align: right;">
+            <button class="ant-btn" onclick="closeCapacityModal()">关闭</button>
+        </div>
+    </div>
+
+    <div id="modalMask" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%;
+  background: rgba(0,0,0,0.45); z-index: 999;"></div>
+    <!-- Excel预览弹窗 -->
+    <div class="modal" id="excelPreviewModal">
+        <div class="modal-header">Excel 数据预览</div>
+        <div id="excelPreviewContent" style="max-height: 60vh; overflow: auto;"></div>
+        <div class="modal-footer">
+            <button class="ant-btn" onclick="closeExcelPreview()">取消</button>
+            <button class="ant-btn ant-btn-primary" onclick="confirmExcelImport()">确认导入</button>
+        </div>
+    </div>
+
+
+
+
+    <table>
+        <thead>
+        <tr>
+            <th>预测描述</th>
+            <th>预测版本</th>
+            <th style="width: 150px;">订单ID集合</th>
+            <th style="width: 150px;">接收订单排序</th>
+            <th style="width: 150px;">操作</th>
+        </tr>
+        </thead>
+        <tbody id="taskTableBody"></tbody>
+    </table>
+</div>
+
+<!-- 新建任务模态框 -->
+<div class="modal" id="createModal">
+    <div class="modal-header">新建预测任务</div>
+    <div class="form-item">
+        <label for="descInput">预测描述</label>
+        <input type="text" id="descInput" />
+        <div style="font-size: 12px; color: gray; margin-top: 4px;">
+            格式建议：年月日+第一批，例如：2025060801第一批预测任务
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="ant-btn" onclick="closeModal()">取消</button>
+        <button class="ant-btn ant-btn-primary" onclick="createTask()">提交</button>
+    </div>
+</div>
+
+<!-- 查看详情模态框 -->
+<div class="modal" id="detailModal">
+    <div class="modal-header">任务详情</div>
+    <div class="form-item">
+        <label>预测描述</label>
+        <div id="detailDesc"></div>
+    </div>
+    <div class="form-item">
+        <label>订单ID集合</label>
+        <textarea id="detailOrderIds" rows="4" readonly></textarea>
+    </div>
+    <div class="form-item">
+        <label>接受订单</label>
+        <textarea id="detailSequence" rows="3" readonly></textarea>
+    </div>
+    <div class="form-item">
+        <label>拒绝订单</label>
+        <textarea id="detailResult" rows="2" readonly></textarea>
+    </div>
+    <div class="modal-footer">
+        <button class="ant-btn" onclick="closeDetail()">关闭</button>
+    </div>
+</div>
+<!-- 弹窗容器 -->
+<div id="excelModal" style="display:none; position:fixed; top:10%; left:50%; transform:translateX(-50%);
+    background:white; padding:20px; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,0.3); z-index:9999;
+    max-height: 80vh; overflow: auto; width: 80%;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <h3>预测订单详情</h3>
+        <button onclick="closeExcelModal()" style="border:none; background:#f44336; color:white; padding:5px 10px; border-radius:5px; cursor:pointer;">关闭</button>
+    </div>
+    <div id="excelTableContainer"></div>
+</div>
+
+
+<script>
+    let currentUserRole = null;
+
+    // 页面加载时获取用户身份
+    window.onload = function () {
+        fetch('/me')
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === "ok") {
+                    currentUserRole = data.role;
+                    updateUIByRole();
+                } else {
+                    alert("请先登录");
+                    window.location.href = "/login.html";
+                }
+            });
+    }
+
+    function updateUIByRole() {
+        if (currentUserRole === "user") {
+            // 隐藏“新建预测任务”按钮
+            document.querySelector('button[onclick="openModal()"]').style.display = "none";
+            document.getElementById("downloadTemplate").style.display = "none";
+            document.querySelector('button[onclick="openCapacityModal()"]').style.display = "none";
+        }
+
+        // 渲染任务列表时，控制操作按钮的显示
+        renderTasks(); // 重新渲染任务时按角色显示操作按钮
+    }
+    let taskList = []
+    let previewData = []     // 保存 Excel 数据
+    let currentPreviewIndex  // 当前正在导入的任务索引
+
+
+    function renderTasks(data = taskList) {
+        const tbody = document.getElementById("taskTableBody")
+        tbody.innerHTML = ""
+        data.forEach((task, index) => {
+            const tr = document.createElement("tr")
+            let operationHTML = '<div class="operation-buttons">';
+            if (task.status === "待导入" && currentUserRole === "admin") {
+                operationHTML += `<input type="file" onchange="handleFileUpload(event, ${index})" />`;
+            } else if (task.status === "待预测" && currentUserRole === "admin") {
+                operationHTML += `<button class="ant-btn ant-btn-primary" onclick="startPrediction(${index})">开始预测</button>`;
+            }
+            operationHTML += `<button class="ant-btn" onclick="showDetail(${index})">详情</button>`;
+            if (currentUserRole === "admin") {
+                operationHTML += `<button class="ant-btn ant-btn-danger" onclick="deleteTask(${index})">删除</button>`;
+            }
+            operationHTML += `</div>`;
+
+
+            tr.innerHTML = `
+    <td>${task.description || "-"}</td>
+    <td>${task.version || "-"}</td>
+
+
+    <td>
+    <div class="sequence-cell">
+        ${task.orderIds ? task.orderIds.join(", ") : "-"}
+    </div>
+</td>
+    <td>
+    <div class="sequence-cell">
+        ${(task.sequence || "").split(",").map(id => `<div>${id.trim()}</div>`).join("")}
+    </div>
+</td>
+
+    <td>${operationHTML}</td>
+`
+
+            tbody.appendChild(tr)
+        })
+    }
+
+    function openModal() {
+        document.getElementById("createModal").classList.add("show")
+    }
+
+    function closeModal() {
+        document.getElementById("createModal").classList.remove("show")
+    }
+
+    function createTask() {
+        const desc = document.getElementById("descInput").value.trim()
+        if (!desc) {
+            alert("请输入预测描述！")
+            return
+        }
+
+        fetch("/api/predict/add", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ description: desc })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success || data.code === 200) {
+                    alert("预测任务添加成功！")
+                    closeModal()
+                    loadTaskList()
+                } else {
+                    alert("添加失败：" + (data.message || "未知错误"))
+                }
+            })
+            .catch(error => {
+                console.error("请求出错：", error)
+                alert("请求出错")
+            });
+    }
+
+    function loadTaskList() {
+        fetch("/api/predict/list")
+            .then(res => res.json())
+            .then(data => {
+                taskList = data || []
+                taskList.forEach(item => {
+                    console.log(item)
+                    item.description = item.predictDecribe || "-"
+                    item.version = item.dataversion || "-"
+                    item.orderIds = (item.orderIds || "").split(",").filter(Boolean)
+                    item.sequence = item.predictResultSequence || "-"
+                    item.result = item.resutl || "-"
+                    console.log(item.orderIds)
+                    if (item.result === "-" && item.orderIds.length>0) {
+                        item.status = "待预测"
+                    } else if (item.result !== "-"){
+                        item.status = "已预测"
+                    }else {
+                        item.status = "待导入"
+                    }
+                })
+                renderTasks()
+            })
+            .catch(err => {
+                console.error("加载任务失败", err)
+                alert("加载任务失败")
+            });
+    }
+
+
+
+    function handleFileUpload(event, index) {
+        const file = event.target.files[0]
+        if (!file) return
+
+        const reader = new FileReader()
+        reader.onload = function (e) {
+            const data = new Uint8Array(e.target.result)
+            const workbook = XLSX.read(data, { type: 'array' })
+            const sheet = workbook.Sheets[workbook.SheetNames[0]]
+            const jsonData = XLSX.utils.sheet_to_json(sheet)
+
+            if (!jsonData.length) {
+                alert("Excel 无数据")
+                return
+            }
+
+            // 保存预览数据和任务索引
+            previewData = jsonData
+            currentPreviewIndex = index
+
+            // 生成表格 HTML
+            const keys = Object.keys(jsonData[0])
+            let tableHtml = `<table><thead><tr>${keys.map(k => `<th>${k}</th>`).join("")}</tr></thead><tbody>`
+            jsonData.forEach(row => {
+                tableHtml += `<tr>${keys.map(k => `<td>${row[k] ?? ""}</td>`).join("")}</tr>`
+            })
+            tableHtml += `</tbody></table>`
+
+            document.getElementById("excelPreviewContent").innerHTML = tableHtml
+            document.getElementById("excelPreviewModal").classList.add("show")
+        }
+        reader.readAsArrayBuffer(file)
+    }
+
+
+
+    function startPrediction(index) {
+        const task = taskList[index];
+        console.log(task)
+        if (!task || !task.id) {
+            alert("任务数据错误，无法开始预测");
+            return;
+        }
+
+        fetch("/api/predict/start", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ predictId: task.id ,dataversion: task.version})
+        })
+            .then(res => res.json())
+            .then(data => {
+                if (data.code === 200) {
+                    alert("预测已启动！");
+                    task.status = "预测中";  // 可选更新 UI 状态
+                    loadTaskList()
+                    renderTasks();
+                } else {
+                    alert("预测启动失败：" + (data.message || "未知错误"));
+                }
+            })
+            .catch(err => {
+                console.error("启动预测出错", err);
+                alert("预测启动失败！");
+            });
+    }
+
+    function deleteTask(index) {
+        if (confirm("确定要删除该任务吗？")) {
+            const predictId = taskList[index].id
+            fetch(`/api/predict/delete/${predictId}`)
+                .then(res => res.json())
+                .then(data => {
+                    console.log(data)
+                    if (data.code !== 200 ) {
+                        alert("删除失败")
+                        return
+                    }
+                    loadTaskList()
+                })
+                .catch(err => {
+                    console.error("删除失败", err)
+                    alert("删除失败")
+                })
+            renderTasks()
+        }
+    }
+
+    // function showDetail(index) {
+    //     const task = taskList[index]
+    //     document.getElementById("detailDesc").textContent = task.description || "-"
+    //     document.getElementById("detailOrderIds").value = (task.orderIds || []).join(", ")
+    //     document.getElementById("detailSequence").value = task.sequence || "-"
+    //     document.getElementById("detailResult").value = task.result || "-"
+    //     document.getElementById("detailModal").classList.add("show")
+    // }
+    function showDetail(index) {
+        const predictId = taskList[index].id
+        fetch(`/api/predict/detail/${predictId}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.code !== 200 || !data.data) {
+                    alert("获取详情失败")
+                    return
+                }
+                showExcelPreview(data.data)
+            })
+            .catch(err => {
+                console.error("获取详情失败", err)
+                alert("获取详情失败")
+            })
+    }
+
+    function closeDetail() {
+        document.getElementById("detailModal").classList.remove("show")
+    }
+
+    function searchTasks() {
+        const keyword = document.getElementById("searchInput").value.trim()
+        if (!keyword) return renderTasks()
+        const filtered = taskList.filter(t =>
+            (t.description || "").includes(keyword) ||
+            (t.version || "").includes(keyword)
+        );
+        renderTasks(filtered)
+    }
+    function showExcelPreview(rows) {
+        const container = document.getElementById("excelTableContainer");
+        container.innerHTML = ""; // 清空内容
+
+        if (!rows || rows.length === 0) {
+            container.innerHTML = "<p>暂无数据</p>";
+        } else {
+            const columns = Object.keys(rows[0]);
+            let html = `<table style="width:100%; border-collapse:collapse; text-align:center;">
+                        <thead style="background-color:#f0f0f0;">
+                            <tr>`;
+            columns.forEach(col => {
+                html += `<th style="padding:8px; border:1px solid #ccc;">${col}</th>`;
+            });
+            html += `</tr></thead><tbody>`;
+
+            rows.forEach(row => {
+                html += `<tr>`;
+                columns.forEach(col => {
+                    html += `<td style="padding:8px; border:1px solid #ccc;">${row[col] != null ? row[col] : ''}</td>`;
+                });
+                html += `</tr>`;
+            });
+
+            html += `</tbody></table>`;
+            container.innerHTML = html;
+        }
+
+        document.getElementById("excelModal").style.display = "block";
+    }
+
+    function closeExcelModal() {
+        document.getElementById("excelModal").style.display = "none";
+    }
+
+
+    function confirmExcelImport() {
+        const task = taskList[currentPreviewIndex]
+        const orderIds = previewData.map(row => row["订单id"] || row["orderId"]).filter(Boolean)
+
+        if (orderIds.length === 0) {
+            alert("无法从 Excel 中识别订单ID，请检查列名")
+            return
+        }
+
+        // 调用后端 API，假设接口为 /api/predict/import
+        fetch("/api/predict/import", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                predictId: task.id,        // 你需要确保 task.id 是后端分配的
+                orderList: previewData     // 或者只发 orderIds 也行，看后端要求
+            })
+        })
+            .then(res => {
+                if (!res.ok) {
+                    return res.json().then(err => {
+                        throw new Error(err.message || "请求失败");
+                    });
+                }
+                return res.json();
+            })
+            .then(data => {
+                alert("导入成功！");
+                taskList[currentPreviewIndex].orderIds = previewData.map(item => item.orderId)
+                taskList[currentPreviewIndex].status = "待预测";
+                renderTasks();
+                closeExcelPreview();
+                loadTaskList()
+            })
+            .catch(err => {
+                console.error("导入失败", err);
+                alert("导入失败：" + err.message);
+            });
+    }
+
+
+    function closeExcelPreview() {
+        document.getElementById("excelPreviewModal").classList.remove("show")
+        previewData = []
+        currentPreviewIndex = null
+    }
+
+    // 打开弹窗
+    async function openCapacityModal() {
+        document.getElementById('capacityModal').style.display = 'block';
+        document.getElementById('modalMask').style.display = 'block';
+
+        let data = [];
+        try {
+            const res = await fetch('/api/machine_yield_config/list');
+            if (!res.ok) throw new Error('接口请求失败');
+            data = await res.json();
+        } catch (err) {
+            alert('加载产能配置失败：' + err.message);
+            return;
+        }
+
+        const tbody = document.getElementById('capacityTbody');
+        tbody.innerHTML = '';
+
+        data.forEach(item => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+      <td style="padding:8px; border:1px solid #f0f0f0;">${item.itemName}</td>
+      <td style="padding:8px; border:1px solid #f0f0f0;">${item.itemCode}</td>
+      <td style="padding:8px; border:1px solid #f0f0f0;">
+        <input type="number" min="0" step="0.01" class="ant-input" style="width: 120px;" value="${item.yieldPerHour}" data-id="${item.id}" data-field="yieldPerHour">
+      </td>
+      <td style="padding:8px; border:1px solid #f0f0f0;">
+        <input type="text" class="ant-input" style="width: 100px;" value="${item.unit}" data-id="${item.id}" data-field="unit">
+      </td>
+      <td style="padding:8px; border:1px solid #f0f0f0;">
+        <button class="ant-btn ant-btn-link" data-id="${item.id}">修改</button>
+      </td>
+    `;
+            tbody.appendChild(tr);
+        });
+
+        // 绑定修改按钮事件
+        tbody.querySelectorAll('button.ant-btn-link').forEach(btn => {
+            btn.addEventListener('click', async function () {
+                const id = this.getAttribute('data-id');
+                const row = this.parentElement.parentElement;
+                const yieldInput = row.querySelector('input[data-field="yieldPerHour"]');
+                const unitInput = row.querySelector('input[data-field="unit"]');
+
+                const newYield = parseFloat(yieldInput.value);
+                const newUnit = unitInput.value.trim();
+
+                if (isNaN(newYield) || newYield < 0) {
+                    alert('请输入有效的每小时产量（非负数字）');
+                    return;
+                }
+                if (newUnit === '') {
+                    alert('单位不能为空');
+                    return;
+                }
+
+                try {
+                    const res = await fetch('/api/machine_yield_config/update', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ id: Number(id), yieldPerHour: newYield, unit: newUnit })
+                    });
+                    const result = await res.json();
+                    if (result.success) {
+                        alert(`产品代码 ${row.children[1].innerText} 的产能配置已更新`);
+                    } else {
+                        alert('更新失败');
+                    }
+                } catch (e) {
+                    alert('请求错误：' + e.message);
+                }
+            });
+        });
+    }
+
+    // 关闭弹窗
+    function closeCapacityModal() {
+        document.getElementById('capacityModal').style.display = 'none';
+        document.getElementById('modalMask').style.display = 'none';
+    }
+
+
+
+
+
+    loadTaskList()
+</script>
+</body>
+</html>
